@@ -1,0 +1,15 @@
+var n,num;
+procedure getnum;
+ begin
+  while n#1 do
+   begin
+    num:=(num+1)*2;
+    n:=n-1;
+   end
+ end;
+begin
+ read(n);
+ num:=1;
+ call getnum;
+ write(num);
+end.
