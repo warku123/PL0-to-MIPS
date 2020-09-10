@@ -1202,7 +1202,7 @@ void interpret()
 				WriteMpisAsm("lw", "$t9", "4($t0)");//将栈顶的数s[t + 1]取出，放入寄存器t9(base)
 
 				WriteMpisAsm("beq", "$t8", "$0", "mainEnd");//t8==0(p==0)?,是则整个程序结束
-				WriteMpisAsm("jr", "$31");//返回调用处
+				WriteMpisAsm("jr", "$s4");//返回调用处
 				
 				break;
 			case 1://求相反数
@@ -1482,8 +1482,10 @@ void interpret()
 
 			sprintf(immediate, "%d", i.a);
 			WriteMpisAsm("li", "$t8", immediate);//p=i.a
+
 			sprintf(immediate, "ins%d", i.a);
-			WriteMpisAsm("jal", immediate);
+			WriteMpisAsm("la", "$s1", immediate);//跳转的地址
+			WriteMpisAsm("jalr", "$s4", "$s1");//跳转到i.a，原地址保存在s4
 
 			break;
 		case inte:  /* 分配内存 */
