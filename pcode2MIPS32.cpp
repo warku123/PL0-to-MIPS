@@ -1,25 +1,25 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
 /*
- * PL/0 编译器
- *
- * 使用方法：
- * 运行后输入PL/0源程序文件?
- * 回答是否输出虚拟机代码
- * 回答是否输出名字表
- * fa.tmp输出虚拟机代码
- * fa1.tmp输出源文件及其各行对应的首地址
- * fa2.tmp输出结果
- * fas.tmp输出名字表
- */
+* PL/0 编译器
+*
+* 使用方法：
+* 运行后输入PL/0源程序文件?
+* 回答是否输出虚拟机代码
+* 回答是否输出名字表
+* fa.tmp输出虚拟机代码
+* fa1.tmp输出源文件及其各行对应的首地址
+* fa2.tmp输出结果
+* fas.tmp输出名字表
+*/
 
 #include "pl0.h"
 #include "string.h"
 
- //运行前初始化，对保留字表 (word)、保留字表中每一个保留字对应的 symbol 类型 ( wsym )、
- //部分符号对应的 symbol 类型表 ( ssym )、类 PCODE 指令助记符表 ( mnemonic )、
- //声明开始集合 ( declbegsys )、表达式开始集合 ( statbegsys )、
- //项开始符号集合 ( facbegsys ) 以及一些全局变量的初始化
+//运行前初始化，对保留字表 (word)、保留字表中每一个保留字对应的 symbol 类型 ( wsym )、
+//部分符号对应的 symbol 类型表 ( ssym )、类 PCODE 指令助记符表 ( mnemonic )、
+//声明开始集合 ( declbegsys )、表达式开始集合 ( statbegsys )、
+//项开始符号集合 ( facbegsys ) 以及一些全局变量的初始化
 void init()
 {
 	int i;
@@ -718,7 +718,7 @@ int statement(bool* fsys, int* ptx, int lev)
 		memcpy(nxtlev, fsys, sizeof(bool) * symnum);
 		nxtlev[semicolon] = true;
 		nxtlev[endsym] = true;  /* 后跟符号为分号或end */
-		/* 循环调用语句处理函数，直到下一个符号不是语句开始符号或收到end */
+								/* 循环调用语句处理函数，直到下一个符号不是语句开始符号或收到end */
 		statementdo(nxtlev, ptx, lev);
 
 		while (inset(sym, statbegsys) || sym == semicolon)
@@ -912,7 +912,7 @@ int factor(bool* fsys, int* ptx, int lev)
 	int i;
 	bool nxtlev[symnum];
 	testdo(facbegsys, fsys, 24);    /* 检测因子的开始符号 */
-	/* while(inset(sym, facbegsys)) */  /* 循环直到不是因子开始符号 */
+									/* while(inset(sym, facbegsys)) */  /* 循环直到不是因子开始符号 */
 	if (inset(sym, facbegsys))    /* BUG: 原来的方法var1(var2+var3)会被错误识别为因子 */
 	{
 		if (sym == ident)    /* 因子为常量或变量 */
@@ -1078,7 +1078,7 @@ void listcode(int cx0)
 #pragma region 解释器
 
 //格式化返回一个MIPS指令
-void WriteMpisAsm(const char* ins, const char* op1=NULL, const char* op2 = NULL, const  char* op3 = NULL) {
+void WriteMpisAsm(const char* ins, const char* op1 = NULL, const char* op2 = NULL, const  char* op3 = NULL) {
 	if (mips == NULL) {
 		printf("文件都没打开！\n");
 		return;
@@ -1090,19 +1090,19 @@ void WriteMpisAsm(const char* ins, const char* op1=NULL, const char* op2 = NULL,
 	{
 		fprintf(mips, "\t%s %s\n", ins, op1);
 	}
-	else if(op3==NULL)
+	else if (op3 == NULL)
 	{
 		fprintf(mips, "\t%s %s, %s\n", ins, op1, op2);
 	}
 	else
 	{
-		fprintf(mips, "\t%s %s, %s, %s\n", ins,op1,op2,op3);
+		fprintf(mips, "\t%s %s, %s, %s\n", ins, op1, op2, op3);
 	}
 }
 
-void Label(const char* lab,int num=-1) {
-	if(num==-1)fprintf(mips, "%s:\n", lab);
-	else fprintf(mips, "%s%d:\n", lab,num);
+void Label(const char* lab, int num = -1) {
+	if (num == -1)fprintf(mips, "%s:\n", lab);
+	else fprintf(mips, "%s%d:\n", lab, num);
 }
 
 /* 求出定义该过程的过程基址
@@ -1147,14 +1147,15 @@ void interpret()
 {
 	struct instruction i;   /* 存放当前指令 */
 	int j;
-	char t1[20], t2[20];
+	char t1[20], t2[20], text[30] = "Input a integter:";
 	bool baseFlag = false;
 	FILE* pcode;
 
-	pcode= fopen("Pcode.pcode", "w");
+	pcode = fopen("Pcode.pcode", "w");
 	mips = fopen("mpis32.s", "w");
 
-	fprintf(mips, ".data\nstack:\t.space\t %d\n\n.text\nmain:\n",stacksize*4);
+	fprintf(mips, ".data\nstack:\t.space\t %d\n", stacksize * 4);
+	fprintf(mips, "Mes:\t.asciiz\t \"%s\"\n\n.text\nmain:\n", text);
 
 	printf("start pl0\n");
 
@@ -1168,10 +1169,10 @@ void interpret()
 
 	printf("%d\n", cx);
 
-	for(j=0;j<cx;j++) {
+	for (j = 0; j<cx; j++) {
 		fprintf(pcode, "%d %s %d %d\n", j, mnemonic[code[j].f], code[j].l, code[j].a);
 		i = code[j];    /* 读当前指令 */
-		
+
 		printf("%d\n", j);
 		WriteMpisAsm("addi", "$t8", "$t8", "1");//p++
 		Label("ins", j);
@@ -1203,7 +1204,7 @@ void interpret()
 
 				WriteMpisAsm("beq", "$t8", "$0", "mainEnd");//t8==0(p==0)?,是则整个程序结束
 				WriteMpisAsm("jr", "$s4");//返回调用处
-				
+
 				break;
 			case 1://求相反数
 				WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
@@ -1378,7 +1379,7 @@ void interpret()
 				WriteMpisAsm("li", "$v0", "1");
 
 				WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
-				WriteMpisAsm("addi", "$t1", "$t7","-1");//t1=t7-1
+				WriteMpisAsm("addi", "$t1", "$t7", "-1");//t1=t7-1
 				WriteMpisAsm("sll", "$t1", "$t1", "2");//t1=t1<<2,即乘以4
 				WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到栈顶那个数的地址
 
@@ -1395,10 +1396,9 @@ void interpret()
 
 				break;
 			case 16://输出?，并从控制台读入一个数字到栈顶
-				//			    输出问号
-				sprintf(immediate, "%d", '?');
-				WriteMpisAsm("li", "$v0", "11");
-				WriteMpisAsm("addi", "$a0", "$zero", immediate);
+					//			    输出问号
+				WriteMpisAsm("li", "$v0", "4");
+				WriteMpisAsm("la", "$a0", "Mes"); //加载消息首地址
 				WriteMpisAsm("syscall");
 				//			    输入数字，放入v0
 				WriteMpisAsm("li", "$v0", "5");
@@ -1459,7 +1459,7 @@ void interpret()
 			WriteMpisAsm("sll", "$t1", "$t1", "2");//t1=t1<<2,即乘以4
 			WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
 			WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到s[base(i.l, s, b) + i.a]地址,在t0
-			
+
 			WriteMpisAsm("sw", "$s0", "($t0)");//s0存入s[base(i.l, s, b) + i.a]
 			break;
 		case cal:   /* 调用子过程 */
@@ -1475,7 +1475,7 @@ void interpret()
 			WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到s[t]地址,在t0
 
 			WriteMpisAsm("sw", "$t4", "($t0)");//s[t] = base(i.l, s, b)
-			
+
 			WriteMpisAsm("sw", "$t9", "4($t0)");//s[t + 1] = b
 			WriteMpisAsm("sw", "$t8", "8($t0)");//s[t + 2] = p
 			WriteMpisAsm("move", "$t9", "$t7");//b = t
@@ -1518,10 +1518,10 @@ void interpret()
 			Label(t1);
 
 		}
-	} 
+	}
 
-	
-	if(baseFlag)
+
+	if (baseFlag)
 		base();
 
 	//结束
