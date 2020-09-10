@@ -1,0 +1,5 @@
+1        var      m        lev=0    addr=3  
+2        var      n        lev=0    addr=4  
+3        var      r        lev=0    addr=5  
+4        var      q        lev=0    addr=6  
+5        proc     gcd      lev=0    addr=2   size=3  
