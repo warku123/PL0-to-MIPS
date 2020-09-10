@@ -2,16 +2,16 @@
 
 #include <stdio.h>
 
-#define norw 13     /* ±£Áô×Ö¸öÊý */
-#define txmax 100   /* Ãû×Ö±íÈÝÁ¿ */
-#define nmax 14     /* Êý×ÖµÄ×î´óÎ»Êý */
-#define al 10       /* ±êÊ¶·ûµÄ×î´ó³¤¶È */
-#define amax 2047   /* ³£Á¿×î´óÖµ */
-#define levmax 3    /* ×î´óÔÊÐí¹ý³ÌÇ¶Ì×ÉùÃ÷²ãÊý [0,  levmax]*/
-#define cxmax 500   /* ×î¶àµÄÐéÄâ»ú´úÂëÊý */
-#define stacksize 500    /* ½âÊÍÖ´ÐÐÊ±Ê¹ÓÃµÄÕ» */
+#define norw 13     /* ä¿ç•™å­—ä¸ªæ•° */
+#define txmax 100   /* åå­—è¡¨å®¹é‡ */
+#define nmax 14     /* æ•°å­—çš„æœ€å¤§ä½æ•° */
+#define al 10       /* æ ‡è¯†ç¬¦çš„æœ€å¤§é•¿åº¦ */
+#define amax 2047   /* å¸¸é‡æœ€å¤§å€¼ */
+#define levmax 3    /* æœ€å¤§å…è®¸è¿‡ç¨‹åµŒå¥—å£°æ˜Žå±‚æ•° [0,  levmax]*/
+#define cxmax 500   /* æœ€å¤šçš„è™šæ‹Ÿæœºä»£ç æ•° */
+#define stacksize 500    /* è§£é‡Šæ‰§è¡Œæ—¶ä½¿ç”¨çš„æ ˆ */
 
-//ÓÉ16¸öÔËËã·û¼°½ç·û£¬13¸ö±£Áô×Ö»¹ÓÐÊý×Ö¡¢±êÊ¶·û¹¹³É
+//ç”±16ä¸ªè¿ç®—ç¬¦åŠç•Œç¬¦ï¼Œ13ä¸ªä¿ç•™å­—è¿˜æœ‰æ•°å­—ã€æ ‡è¯†ç¬¦æž„æˆ
 enum symbol {
     nul, ident, number,
     becomes, plus, minus, times, slash,
@@ -21,79 +21,79 @@ enum symbol {
     dosym, varsym, constsym, oddsym, procsym, callsym,
     readsym, writesym,
 };
-#define symnum 32	/* ·ûºÅÊý */
+#define symnum 32	/* ç¬¦å·æ•° */
 
-/* ÐéÄâ»ú´úÂë */
+/* è™šæ‹Ÿæœºä»£ç  */
 enum fct {
     lit, opr, lod,
     sto, cal, inte,
     jmp, jpc,
 };
-#define fctnum 8	/* ÐéÄâ»ú´úÂëÊý */
+#define fctnum 8	/* è™šæ‹Ÿæœºä»£ç æ•° */
 
-/* ÐéÄâ»ú´úÂë½á¹¹ */
+/* è™šæ‹Ÿæœºä»£ç ç»“æž„ */
 struct instruction
 {
-    enum fct f; /* ÐéÄâ»ú´úÂëÖ¸Áî */
-    int l;      /* ÒýÓÃ²ãÓëÉùÃ÷²ãµÄ²ã´Î²î */
-    int a;      /* ¸ù¾ÝfµÄ²»Í¬¶ø²»Í¬ */
+    enum fct f; /* è™šæ‹Ÿæœºä»£ç æŒ‡ä»¤ */
+    int l;      /* å¼•ç”¨å±‚ä¸Žå£°æ˜Žå±‚çš„å±‚æ¬¡å·® */
+    int a;      /* æ ¹æ®fçš„ä¸åŒè€Œä¸åŒ */
 };
 
-FILE* fas;  /* Êä³öÃû×Ö±í */
-FILE* fa;   /* Êä³öÐéÄâ»ú´úÂë */
-FILE* fa1;  /* Êä³öÔ´ÎÄ¼þ¼°Æä¸÷ÐÐ¶ÔÓ¦µÄÊ×µØÖ· */
-FILE* fa2;  /* Êä³ö½á¹û */
+FILE* fas;  /* è¾“å‡ºåå­—è¡¨ */
+FILE* fa;   /* è¾“å‡ºè™šæ‹Ÿæœºä»£ç  */
+FILE* fa1;  /* è¾“å‡ºæºæ–‡ä»¶åŠå…¶å„è¡Œå¯¹åº”çš„é¦–åœ°å€ */
+FILE* fa2;  /* è¾“å‡ºç»“æžœ */
 
-FILE* mips; //Êä³ömips»ã±à´úÂë
+FILE* mips; //è¾“å‡ºmipsæ±‡ç¼–ä»£ç 
 
-bool listswitch;    /* ÏÔÊ¾ÐéÄâ»ú´úÂëÓë·ñ */
-bool tableswitch;   /* ÏÔÊ¾Ãû×Ö±íÓë·ñ */
-char ch;            //ÓÃÓÚ´Ê·¨·ÖÎöÆ÷£¬´æ·Å×î½üÒ»´Î´ÓÎÄ¼þÖÐ¶Á³öµÄ×Ö·û,getchÊ¹ÓÃ
-enum symbol sym;    // ´Ê·¨·ÖÎöÆ÷Êä³ö½á¹ûÖ®ÓÃ£¬´æ·Å×î½üÒ»´ÎÊ¶±ð³öÀ´µÄ ·ûºÅtoken µÄÀàÐÍ
-char id[al + 1];    // ´Ê·¨·ÖÎöÆ÷Êä³ö½á¹ûÖ®ÓÃ£¬µ±Ç°ident, ¶à³öµÄÒ»¸ö×Ö½ÚÓÃÓÚ´æ·Å0
-int num;            // ´Ê·¨·ÖÎöÆ÷Êä³ö½á¹ûÖ®ÓÃ£¬µ±Ç°number
-int cc, ll;          // getchÊ¹ÓÃµÄ¼ÆÊýÆ÷£¬cc±íÊ¾µ±Ç°×Ö·û(ch)µÄÎ»ÖÃ£¬¼´ÐÐ»º³åÇøµÄÁÐÖ¸Õë,llÎªÐÐ»º³åÇø³¤¶È
-int cx;             // ÐéÄâ»ú´úÂëÖ¸Õë, È¡Öµ·¶Î§[0, cxmax-1],´úÂëÉú³ÉÄ£¿é×ÜÔÚ cx ËùÖ¸Î»ÖÃÉú³ÉÐÂµÄ´úÂë
-char line[81];      //ÐÐ»º³åÇø£¬ÓÃÓÚ´ÓÎÄ¼þ¶Á³öÒ»ÐÐ£¬¹©´Ê·¨·ÖÎö»ñÈ¡µ¥´ÊÊ±Ö®ÓÃ
-char a[al + 1];       /* ´Ê·¨·ÖÎöÆ÷ÖÐÓÃÓÚÁÙÊ±´æ·ÅÕýÔÚ·ÖÎöµÄ´Ê, ¶à³öµÄÒ»¸ö×Ö½ÚÓÃÓÚ´æ·Å0 */
-struct instruction code[cxmax]; /* ´æ·Å±àÒëµÃµ½µÄÀà PCODEÐéÄâ»ú´úÂëµÄÊý×é */
-char word[norw][al];        /* ±£Áô×Ö */
-enum symbol wsym[norw];     /* ±£Áô×Ö¶ÔÓ¦µÄ·ûºÅÖµ */
-enum symbol ssym[256];      /* µ¥×Ö·ûµÄ·ûºÅÖµ */
-char mnemonic[fctnum][5];   //Àà PCODE Ö¸ÁîÖú¼Ç·û±í
-bool declbegsys[symnum];    /* ±íÊ¾ÉùÃ÷¿ªÊ¼µÄ·ûºÅ¼¯ºÏ */
-bool statbegsys[symnum];    /* ±íÊ¾Óï¾ä¿ªÊ¼µÄ·ûºÅ¼¯ºÏ */
-bool facbegsys[symnum];     /* ±íÊ¾Òò×Ó¿ªÊ¼µÄ·ûºÅ¼¯ºÏ */
+bool listswitch;    /* æ˜¾ç¤ºè™šæ‹Ÿæœºä»£ç ä¸Žå¦ */
+bool tableswitch;   /* æ˜¾ç¤ºåå­—è¡¨ä¸Žå¦ */
+char ch;            //ç”¨äºŽè¯æ³•åˆ†æžå™¨ï¼Œå­˜æ”¾æœ€è¿‘ä¸€æ¬¡ä»Žæ–‡ä»¶ä¸­è¯»å‡ºçš„å­—ç¬¦,getchä½¿ç”¨
+enum symbol sym;    // è¯æ³•åˆ†æžå™¨è¾“å‡ºç»“æžœä¹‹ç”¨ï¼Œå­˜æ”¾æœ€è¿‘ä¸€æ¬¡è¯†åˆ«å‡ºæ¥çš„ ç¬¦å·token çš„ç±»åž‹
+char id[al + 1];    // è¯æ³•åˆ†æžå™¨è¾“å‡ºç»“æžœä¹‹ç”¨ï¼Œå½“å‰ident, å¤šå‡ºçš„ä¸€ä¸ªå­—èŠ‚ç”¨äºŽå­˜æ”¾0
+int num;            // è¯æ³•åˆ†æžå™¨è¾“å‡ºç»“æžœä¹‹ç”¨ï¼Œå½“å‰number
+int cc, ll;          // getchä½¿ç”¨çš„è®¡æ•°å™¨ï¼Œccè¡¨ç¤ºå½“å‰å­—ç¬¦(ch)çš„ä½ç½®ï¼Œå³è¡Œç¼“å†²åŒºçš„åˆ—æŒ‡é’ˆ,llä¸ºè¡Œç¼“å†²åŒºé•¿åº¦
+int cx;             // è™šæ‹Ÿæœºä»£ç æŒ‡é’ˆ, å–å€¼èŒƒå›´[0, cxmax-1],ä»£ç ç”Ÿæˆæ¨¡å—æ€»åœ¨ cx æ‰€æŒ‡ä½ç½®ç”Ÿæˆæ–°çš„ä»£ç 
+char line[81];      //è¡Œç¼“å†²åŒºï¼Œç”¨äºŽä»Žæ–‡ä»¶è¯»å‡ºä¸€è¡Œï¼Œä¾›è¯æ³•åˆ†æžèŽ·å–å•è¯æ—¶ä¹‹ç”¨
+char a[al + 1];       /* è¯æ³•åˆ†æžå™¨ä¸­ç”¨äºŽä¸´æ—¶å­˜æ”¾æ­£åœ¨åˆ†æžçš„è¯, å¤šå‡ºçš„ä¸€ä¸ªå­—èŠ‚ç”¨äºŽå­˜æ”¾0 */
+struct instruction code[cxmax]; /* å­˜æ”¾ç¼–è¯‘å¾—åˆ°çš„ç±» PCODEè™šæ‹Ÿæœºä»£ç çš„æ•°ç»„ */
+char word[norw][al];        /* ä¿ç•™å­— */
+enum symbol wsym[norw];     /* ä¿ç•™å­—å¯¹åº”çš„ç¬¦å·å€¼ */
+enum symbol ssym[256];      /* å•å­—ç¬¦çš„ç¬¦å·å€¼ */
+char mnemonic[fctnum][5];   //ç±» PCODE æŒ‡ä»¤åŠ©è®°ç¬¦è¡¨
+bool declbegsys[symnum];    /* è¡¨ç¤ºå£°æ˜Žå¼€å§‹çš„ç¬¦å·é›†åˆ */
+bool statbegsys[symnum];    /* è¡¨ç¤ºè¯­å¥å¼€å§‹çš„ç¬¦å·é›†åˆ */
+bool facbegsys[symnum];     /* è¡¨ç¤ºå› å­å¼€å§‹çš„ç¬¦å·é›†åˆ */
 
-/* ·ûºÅ±íÖÐµÄÀàÐÍ */
+/* ç¬¦å·è¡¨ä¸­çš„ç±»åž‹ */
 enum object {
     constant,
     variable,
     procedur,
-    array       //lkzÔö¼Ó²¿·Ö
+    array       //lkzå¢žåŠ éƒ¨åˆ†
 };
-/* ·ûºÅ±í½á¹¹ */
+/* ç¬¦å·è¡¨ç»“æž„ */
 struct tablestruct
 {
-    char name[al];      /* Ãû×Ö */
-    enum object kind;   /* ÀàÐÍ£ºconst, var, array or procedure */
-    int val;            /* ÊýÖµ£¬½öconstÊ¹ÓÃ */
-    int level;          /* Èç¹ûÊÇ±äÁ¿Ãû»ò¹ý³ÌÃû,´æ·Å²ã²î¡¢Æ«ÒÆµØÖ·ºÍ´óÐ¡*/
-    int adr;            /* µØÖ·£¬½öconst²»Ê¹ÓÃ */
-    int size;           /* ÐèÒª·ÖÅäµÄÊý¾ÝÇø¿Õ¼ä, ½öprocedureÊ¹ÓÃ */
+    char name[al];      /* åå­— */
+    enum object kind;   /* ç±»åž‹ï¼šconst, var, array or procedure */
+    int val;            /* æ•°å€¼ï¼Œä»…constä½¿ç”¨ */
+    int level;          /* å¦‚æžœæ˜¯å˜é‡åæˆ–è¿‡ç¨‹å,å­˜æ”¾å±‚å·®ã€åç§»åœ°å€å’Œå¤§å°*/
+    int adr;            /* åœ°å€ï¼Œä»…constä¸ä½¿ç”¨ */
+    int size;           /* éœ€è¦åˆ†é…çš„æ•°æ®åŒºç©ºé—´, ä»…procedureä½¿ç”¨ */
 };
 
-struct tablestruct table[txmax]; /* ·ûºÅ±í */
+struct tablestruct table[txmax]; /* ç¬¦å·è¡¨ */
 
 FILE* fin;
 FILE* fout;
 char fname[al];
-int err; //´íÎó¼ÆÊýÆ÷
+int err; //é”™è¯¯è®¡æ•°å™¨
 
-#pragma region ¾ÍÊÇº¯Êýµ÷ÓÃÓë´íÎó´¦Àí·ÅÔÚÒ»Æð
+#pragma region å°±æ˜¯å‡½æ•°è°ƒç”¨ä¸Žé”™è¯¯å¤„ç†æ”¾åœ¨ä¸€èµ·
 
 
-/* µ±º¯ÊýÖÐ»á·¢Éúfatal errorÊ±£¬·µ»Ø-1¸æÖªµ÷ÓÃËüµÄº¯Êý£¬×îÖÕÍË³ö³ÌÐò */
+/* å½“å‡½æ•°ä¸­ä¼šå‘ç”Ÿfatal erroræ—¶ï¼Œè¿”å›ž-1å‘ŠçŸ¥è°ƒç”¨å®ƒçš„å‡½æ•°ï¼Œæœ€ç»ˆé€€å‡ºç¨‹åº */
 #define getsymdo                      if(-1 == getsym()) return -1
 #define getchdo                       if(-1 == getch()) return -1
 #define testdo(a, b, c)               if(-1 == test(a, b, c)) return -1
@@ -106,7 +106,7 @@ int err; //´íÎó¼ÆÊýÆ÷
 #define constdeclarationdo(a, b, c)   if(-1 == constdeclaration(a, b, c)) return -1
 #define vardeclarationdo(a, b, c)     if(-1 == vardeclaration(a, b, c)) return -1
 #pragma endregion
-#pragma region ¸÷º¯Êý
+#pragma region å„å‡½æ•°
 void error(int n);
 int getsym();
 int getch();
@@ -133,45 +133,45 @@ int base(int l, int* s, int b);
 #pragma endregion
 
 
-//´íÎóÐÅÏ¢Êý×é
+//é”™è¯¯ä¿¡æ¯æ•°ç»„
 const char* err_msg[] = {
     "",//0
-    "'='Ð´³ÉÁË':='",//1
-    "'='ºóÃæÒª¸úÒ»¸öÊý×Ö",//2
-    "±êÊ¶·ûºóÃæÒª¸úÒ»¸ö¡®=¡¯",//3
-    "ÔÚconst£¬var£¬procedureºóÃæÒªÓÐÒ»¸ö±êÊ¶·û",//4
-    "È±ÉÙ','»òÕß';'",//5
-    "¹ý³ÌÃû´íÎó£¡",//6
-    "ÐèÒªÉùÃ÷",//7
-    "ÉùÃ÷ºó±ßÊÇÒ»¸ö²»ÕýÈ·µÄ·ûºÅ",//8
-    "ÉÙÁË'.'£¬³ÌÐòÎÞ·¨Õý³£½áÊø",//9
-    "ÉÙÁË';'",//10
-    "·¢ÏÖÎ´ÉùÃ÷µÄ±êÊ¶·û£¡",//11
-    "·Ç·¨¸³Öµ",//12
-    "ÉÙÁË':='",//13
-    "callÖ®ºóÈ±ÉÙ±êÊ¶·û£¡",//14
-    "callÖ®ºó±êÊ¶·û²»ÊÇ¹ý³Ì£¡",//15
-    "ÉÙÁËthen",//16
-    "È±ÉÙ';'»òÕßend",//17
-    "ÉÙÁËdo",//18
-    "·ûºÅ´íÎó",//19
-    "Ìõ¼þÓï¾äÖÐÎ´·¢ÏÖ²Ù×÷·û£¨¡°#£¬>¡±µÈ£©",//20
-    "²»ÄÜ°Ñ¹ý³ÌµÄ±êÊ¶·û·ÅÔÚ±í´ïÊ½Àï£¡",//21
+    "'='å†™æˆäº†':='",//1
+    "'='åŽé¢è¦è·Ÿä¸€ä¸ªæ•°å­—",//2
+    "æ ‡è¯†ç¬¦åŽé¢è¦è·Ÿä¸€ä¸ªâ€˜=â€™",//3
+    "åœ¨constï¼Œvarï¼ŒprocedureåŽé¢è¦æœ‰ä¸€ä¸ªæ ‡è¯†ç¬¦",//4
+    "ç¼ºå°‘','æˆ–è€…';'",//5
+    "è¿‡ç¨‹åé”™è¯¯ï¼",//6
+    "éœ€è¦å£°æ˜Ž",//7
+    "å£°æ˜ŽåŽè¾¹æ˜¯ä¸€ä¸ªä¸æ­£ç¡®çš„ç¬¦å·",//8
+    "å°‘äº†'.'ï¼Œç¨‹åºæ— æ³•æ­£å¸¸ç»“æŸ",//9
+    "å°‘äº†';'",//10
+    "å‘çŽ°æœªå£°æ˜Žçš„æ ‡è¯†ç¬¦ï¼",//11
+    "éžæ³•èµ‹å€¼",//12
+    "å°‘äº†':='",//13
+    "callä¹‹åŽç¼ºå°‘æ ‡è¯†ç¬¦ï¼",//14
+    "callä¹‹åŽæ ‡è¯†ç¬¦ä¸æ˜¯è¿‡ç¨‹ï¼",//15
+    "å°‘äº†then",//16
+    "ç¼ºå°‘';'æˆ–è€…end",//17
+    "å°‘äº†do",//18
+    "ç¬¦å·é”™è¯¯",//19
+    "æ¡ä»¶è¯­å¥ä¸­æœªå‘çŽ°æ“ä½œç¬¦ï¼ˆâ€œ#ï¼Œ>â€ç­‰ï¼‰",//20
+    "ä¸èƒ½æŠŠè¿‡ç¨‹çš„æ ‡è¯†ç¬¦æ”¾åœ¨è¡¨è¾¾å¼é‡Œï¼",//21
     "",//22
-    "·ûºÅºóÃæ²»ÄÜ¸ú×Å<Òò×Ó>",//23
-    "·ûºÅ²»ÄÜ×÷Îª<±í´ïÊ½>µÄ¿ªÊ¼£¡",//24
+    "ç¬¦å·åŽé¢ä¸èƒ½è·Ÿç€<å› å­>",//23
+    "ç¬¦å·ä¸èƒ½ä½œä¸º<è¡¨è¾¾å¼>çš„å¼€å§‹ï¼",//24
     "",//25
     "",//26
     "",//27
     "",//28
     "",//29
-    "Êý×Ö¹ý´ó£¡",//30
-    "³£Á¿³¬¹ý¿É¶¨ÒåµÄ×î´óÖµ£¡",//31
-    "³¬¹ýÔÊÐíµÄ×î´óÇ¶Ì×²ãÊý£¬²ãÊýÌ«¶àÀ²£¡",//32
-    "¸ñÊ½´íÎó£¬Ó¦ÊÇÓÒÀ¨ºÅ')'",//33
-    "¸ñÊ½´íÎó£¬Ó¦ÊÇ×óÀ¨ºÅ'('",//34
-    "readÀï²»ÊÇ±êÊ¶·ûID,»ò¸Ã±êÊ¶·ûÎ´ÉùÃ÷",//35
+    "æ•°å­—è¿‡å¤§ï¼",//30
+    "å¸¸é‡è¶…è¿‡å¯å®šä¹‰çš„æœ€å¤§å€¼ï¼",//31
+    "è¶…è¿‡å…è®¸çš„æœ€å¤§åµŒå¥—å±‚æ•°ï¼Œå±‚æ•°å¤ªå¤šå•¦ï¼",//32
+    "æ ¼å¼é”™è¯¯ï¼Œåº”æ˜¯å³æ‹¬å·')'",//33
+    "æ ¼å¼é”™è¯¯ï¼Œåº”æ˜¯å·¦æ‹¬å·'('",//34
+    "readé‡Œä¸æ˜¯æ ‡è¯†ç¬¦ID,æˆ–è¯¥æ ‡è¯†ç¬¦æœªå£°æ˜Ž",//35
 };
 
-//ÓÃÓÚÉú³É»ã±àµÄÁÙÊ±±äÁ¿
+//ç”¨äºŽç”Ÿæˆæ±‡ç¼–çš„ä¸´æ—¶å˜é‡
 char immediate[20];

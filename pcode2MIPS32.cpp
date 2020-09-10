@@ -143,7 +143,7 @@ int main()
 		//看能否取出第一个单词
 		if (-1 != getsym())
 		{
-			fa = fopen("Pcode.tmp", "w");
+			fa = fopen("fa.tmp", "w");
 			fas = fopen("fas.tmp", "w");
 			addset(nxtlev, declbegsys, statbegsys, symnum);
 			nxtlev[period] = true;
@@ -1149,7 +1149,9 @@ void interpret()
 	int j;
 	char t1[20], t2[20];
 	bool baseFlag = false;
+	FILE* pcode;
 
+	pcode= fopen("Pcode.pcode", "w");
 	mips = fopen("mpis32.s", "w");
 
 	fprintf(mips, ".data\nstack:\t.space\t %d\n\n.text\nmain:\n",stacksize*4);
@@ -1166,8 +1168,10 @@ void interpret()
 
 	printf("%d\n", cx);
 
-	for(j=1;j<cx;j++) {
+	for(j=0;j<cx;j++) {
+		fprintf(pcode, "%d %s %d %d\n", j, mnemonic[code[j].f], code[j].l, code[j].a);
 		i = code[j];    /* 读当前指令 */
+		
 		printf("%d\n", j);
 		WriteMpisAsm("addi", "$t8", "$t8", "1");//p++
 		Label("ins", j);
@@ -1196,6 +1200,10 @@ void interpret()
 				WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到栈top的地址
 				WriteMpisAsm("lw", "$t8", "8($t0)");//将栈顶的数s[t + 2]取出，放入寄存器t8(PC)
 				WriteMpisAsm("lw", "$t9", "4($t0)");//将栈顶的数s[t + 1]取出，放入寄存器t9(base)
+
+				WriteMpisAsm("beq", "$t8", "$0", "mainEnd");//t8==0(p==0)?,是则整个程序结束
+				WriteMpisAsm("jr", "$31");//返回调用处
+				
 				break;
 			case 1://求相反数
 				WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
@@ -1432,13 +1440,13 @@ void interpret()
 			break;
 		case sto:   /* 栈顶的值存到相对当前过程层差为l，偏移量为A的单元 */
 			baseFlag = true;
-			WriteMpisAsm("addi", "$t7", "$t7", "1");//t--
+			WriteMpisAsm("addi", "$t7", "$t7", "-1");//t--
 
 			WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
 			WriteMpisAsm("move", "$t1", "$t7");//t1=t7
 			WriteMpisAsm("sll", "$t1", "$t1", "2");//t1=t1<<2,即乘以4
 			WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到s[t]的地址
-			WriteMpisAsm("lw", "$t1", "($t0)");//t1=s[t]
+			WriteMpisAsm("lw", "$s0", "($t0)");//s0=s[t]
 
 			sprintf(immediate, "%d", i.l);
 			WriteMpisAsm("li", "$t4", immediate);//t4=l
@@ -1452,7 +1460,7 @@ void interpret()
 			WriteMpisAsm("la", "$t0", "stack");//加载栈基地址
 			WriteMpisAsm("add", "$t0", "$t0", "$t1");//得到s[base(i.l, s, b) + i.a]地址,在t0
 			
-			WriteMpisAsm("sw", "$t1", "($t0)");//t1存入s[base(i.l, s, b) + i.a]
+			WriteMpisAsm("sw", "$s0", "($t0)");//s0存入s[base(i.l, s, b) + i.a]
 			break;
 		case cal:   /* 调用子过程 */
 			baseFlag = true;
@@ -1472,11 +1480,10 @@ void interpret()
 			WriteMpisAsm("sw", "$t8", "8($t0)");//s[t + 2] = p
 			WriteMpisAsm("move", "$t9", "$t7");//b = t
 
-			sprintf(immediate, "ins%d", i.a);
-			WriteMpisAsm("j", immediate);
-
 			sprintf(immediate, "%d", i.a);
 			WriteMpisAsm("li", "$t8", immediate);//p=i.a
+			sprintf(immediate, "ins%d", i.a);
+			WriteMpisAsm("jal", immediate);
 
 			break;
 		case inte:  /* 分配内存 */
@@ -1511,13 +1518,17 @@ void interpret()
 		}
 	} 
 
-	//结束
-	WriteMpisAsm("li", "$v0", "10");
-	WriteMpisAsm("syscall");
+	
 	if(baseFlag)
 		base();
 
+	//结束
+	Label("mainEnd");
+	WriteMpisAsm("li", "$v0", "10");
+	WriteMpisAsm("syscall");
+
 	fclose(mips);
+	fclose(pcode);
 }
 
 
